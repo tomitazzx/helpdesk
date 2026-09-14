@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Help Desk</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
+    h1 { color: #2c3e50; }
+    form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+    input, textarea, select { padding: 8px; font-size: 14px; }
+    button { padding: 10px; background: #2c3e50; color: white; border: none; cursor: pointer; }
+    button:hover { background: #1a252f; }
+    .chamado { border: 1px solid #ccc; border-radius: 6px; padding: 12px; margin-bottom: 10px; }
+    .chamado h3 { margin: 0 0 5px 0; }
+    .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; color: white; background: #e67e22; }
+  </style>
+</head>
+<body>
+
+  <h1>Help Desk - Abertura de Chamados</h1>
+
+  <form id="formChamado">
+    <input type="text" id="titulo" placeholder="Título do problema" required>
+    <textarea id="descricao" placeholder="Descreva o problema" required></textarea>
+    <select id="categoria" required>
+      <option value="">Selecione a categoria</option>
+      <option value="TI">TI</option>
+      <option value="RH">RH</option>
+      <option value="Financeiro">Financeiro</option>
+    </select>
+    <select id="prioridade">
+      <option value="BAIXA">Baixa</option>
+      <option value="MEDIA" selected>Média</option>
+      <option value="ALTA">Alta</option>
+    </select>
+    <button type="submit">Abrir chamado</button>
+  </form>
+
+  <h2>Chamados abertos</h2>
+  <div id="listaChamados">Carregando...</div>
+
+  <script>
+    const API_URL = 'http://localhost:3000';
+    const USUARIO_ID_TESTE = 1; // depois isso virá do login
+
+    async function carregarChamados() {
+      const resposta = await fetch(`${API_URL}/chamados`);
+      const chamados = await resposta.json();
+
+      const lista = document.getElementById('listaChamados');
+      lista.innerHTML = '';
+
+      chamados.forEach(chamado => {
+        const div = document.createElement('div');
+        div.className = 'chamado';
+        div.innerHTML = `
+          <h3>#${chamado.id} - ${chamado.titulo}</h3>
+          <p>${chamado.descricao}</p>
+          <p><strong>Categoria:</strong> ${chamado.categoria} | <strong>Prioridade:</strong> ${chamado.prioridade}</p>
+          <span class="status">${chamado.status}</span>
+        `;
+        lista.appendChild(div);
+      });
+    }
+
+    document.getElementById('formChamado').addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+
+      const novoChamado = {
+        usuario_id: USUARIO_ID_TESTE,
+        titulo: document.getElementById('titulo').value,
+        descricao: document.getElementById('descricao').value,
+        categoria: document.getElementById('categoria').value,
+        prioridade: document.getElementById('prioridade').value,
+      };
+
+      await fetch(`${API_URL}/chamados`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(novoChamado),
+      });
+
+      document.getElementById('formChamado').reset();
+      carregarChamados();
+    });
+
+    carregarChamados();
+  </script>
+
+</body>
+</html>
