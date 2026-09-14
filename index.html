@@ -18,6 +18,7 @@
 <body>
 
   <h1>Help Desk - Abertura de Chamados</h1>
+<p>Olá, <strong id="nomeUsuario"></strong> — <a href="#" id="sair">Sair</a></p>
 
   <form id="formChamado">
     <input type="text" id="titulo" placeholder="Título do problema" required>
@@ -41,7 +42,12 @@
 
   <script>
     const API_URL = 'http://localhost:3000';
-    const USUARIO_ID_TESTE = 1; // depois isso virá do login
+
+const usuarioSalvo = localStorage.getItem('usuario');
+if (!usuarioSalvo) {
+  window.location.href = 'login.html';
+}
+const usuario = JSON.parse(usuarioSalvo);
 
     async function carregarChamados() {
       const resposta = await fetch(`${API_URL}/chamados`);
@@ -67,7 +73,7 @@
       evento.preventDefault();
 
       const novoChamado = {
-        usuario_id: USUARIO_ID_TESTE,
+        usuario_id: usuario.id,
         titulo: document.getElementById('titulo').value,
         descricao: document.getElementById('descricao').value,
         categoria: document.getElementById('categoria').value,
@@ -83,6 +89,14 @@
       document.getElementById('formChamado').reset();
       carregarChamados();
     });
+
+document.getElementById('nomeUsuario').textContent = usuario.nome;
+
+document.getElementById('sair').addEventListener('click', (evento) => {
+  evento.preventDefault();
+  localStorage.removeItem('usuario');
+  window.location.href = 'login.html';
+});
 
     carregarChamados();
   </script>

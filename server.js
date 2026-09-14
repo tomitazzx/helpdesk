@@ -19,6 +19,29 @@ const pool = new Pool({
 app.get('/', (req, res) => {
   res.send('API do Help Desk rodando!');
 });
+app.post('/login', async (req, res) => {
+  const { email, senha } = req.body;
+
+  if (!email || !senha) {
+    return res.status(400).json({ mensagem: 'Informe e-mail e senha' });
+  }
+
+  try {
+    const resultado = await pool.query(
+      'SELECT id, nome, email, tipo FROM usuarios WHERE email = $1 AND senha = $2',
+      [email, senha]
+    );
+
+    if (resultado.rows.length === 0) {
+      return res.status(401).json({ mensagem: 'E-mail ou senha inválidos' });
+    }
+
+    res.json(resultado.rows[0]);
+  } catch (erro) {
+    console.error(erro);
+    res.status(500).json({ mensagem: 'Erro ao fazer login' });
+  }
+});
 
 pool.on('connect', (client) => {
   client.query("SET client_encoding TO 'UTF8'");

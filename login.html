@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Help Desk - Login</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 400px; margin: 100px auto; padding: 0 20px; }
+    h1 { color: #2c3e50; text-align: center; }
+    form { display: flex; flex-direction: column; gap: 10px; }
+    input { padding: 10px; font-size: 14px; }
+    button { padding: 10px; background: #2c3e50; color: white; border: none; cursor: pointer; }
+    button:hover { background: #1a252f; }
+    #erro { color: #c0392b; text-align: center; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <h1>Help Desk - Login</h1>
+
+  <form id="formLogin">
+    <input type="email" id="email" placeholder="E-mail" required>
+    <input type="password" id="senha" placeholder="Senha" required>
+    <button type="submit">Entrar</button>
+  </form>
+  <p id="erro"></p>
+
+  <script>
+    const API_URL = 'http://localhost:3000';
+
+    document.getElementById('formLogin').addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+      const erroTexto = document.getElementById('erro');
+
+      const resposta = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha }),
+      });
+
+      if (resposta.ok) {
+        const usuario = await resposta.json();
+        localStorage.setItem('usuario', JSON.stringify(usuario));
+        window.location.href = 'index.html';
+      } else {
+        erroTexto.textContent = 'E-mail ou senha inválidos';
+      }
+    });
+  </script>
+
+</body>
+</html>
