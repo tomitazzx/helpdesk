@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Help Desk - Painel do Atendente</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; }
+    h1 { color: #2c3e50; }
+    .chamado { border: 1px solid #ccc; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+    .chamado h3 { margin: 0 0 5px 0; }
+    .controles { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+    select, button { padding: 6px; font-size: 14px; }
+    button { background: #2c3e50; color: white; border: none; cursor: pointer; padding: 7px 14px; }
+    button:hover { background: #1a252f; }
+    .msg { color: #27ae60; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <h1>Painel do Atendente</h1>
+  <p>Olá, <strong id="nomeUsuario"></strong> — <a href="#" id="sair">Sair</a></p>
+
+  <div id="lista">Carregando...</div>
+
+  <script>
+    const API_URL = 'http://localhost:3000';
+
+    const usuarioSalvo = localStorage.getItem('usuario');
+    if (!usuarioSalvo) {
+      window.location.href = 'login.html';
+    }
+    const usuario = JSON.parse(usuarioSalvo);
+
+    if (usuario.tipo !== 'ATENDENTE' && usuario.tipo !== 'ADMIN') {
+      window.location.href = 'index.html';
+    }
+
+    const STATUS = [
+      ['ABERTO', 'Aberto'],
+      ['EM_ATENDIMENTO', 'Em atendimento'],
+      ['AGUARDANDO_USUARIO', 'Aguardando usuário'],
+      ['RESOLVIDO', 'Resolvido'],
+      ['FECHADO', 'Fechado'],
+    ];
+    const PRIORIDADES = [['BAIXA', 'Baixa'], ['MEDIA', 'Média'], ['ALTA', 'Alta']];
+
+    function opcoes(lista, selecionado) {
+      return lista
+        .map(([valor, rotulo]) => `<option value="${valor}" ${valor === selecionado ? 'selected' : ''}>${rotulo}</option>`)
+        .join('');
+    }
+
+    async function carregar() {
+      const [resChamados, resAtendentes] = await Promise.all([
+        fetch(`${API_URL}/painel/chamados`),
+        fetch(`${API_URL}/atendentes`),
+      ]);
+      const chamados = await resChamados.json();
+      const atendentes = await resAtendentes.json();
+
+      const listaAtendentes = [['', 'Sem responsável'], ...atendentes.map(a => [String(a.id), a.nome])];
+
+      const lista = document.getElementById('lista');
+      lista.innerHTML = '';
+
+      chamados.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'chamado';
+        div.innerHTML = `
+          <h3>#${c.id} - ${c.titulo}</h3>
+          <p>${c.descricao}</p>
+          <p><strong>Solicitante:</strong> ${c.solicitante} | <strong>Categoria:</strong> ${c.categoria}</p>
+          <div class="controles">
+            <label>Status <select id="status-${c.id}">${opcoes(STATUS, c.status)}</select></label>
+            <label>Prioridade <select id="prio-${c.id}">${opcoes(PRIORIDADES, c.prioridade)}</select></label>
+            <label>Responsável <select id="resp-${c.id}">${opcoes(listaAtendentes, c.responsavel_id ? String(c.responsavel_id) : '')}</select></label>
+            <button onclick="salvar(${c.id})">Salvar</button>
+            <span class="msg" id="msg-${c.id}"></span>
+          </div>
+        `;
+        lista.appendChild(div);
+      });
+    }
+
+    async function salvar(id) {
+      const corpo = {
+        status: document.getElementById(`status-${id}`).value,
+        prioridade: document.getElementById(`prio-${id}`).value,
+        responsavel_id: document.getElementById(`resp-${id}`).value || null,
+      };
+
+      const resposta = await fetch(`${API_URL}/chamados/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(corpo),
+      });
+
+      const msg = document.getElementById(`msg-${id}`);
+      msg.textContent = resposta.ok ? 'Salvo!' : 'Erro ao salvar';
+      setTimeout(() => (msg.textContent = ''), 2500);
+    }
+
+    document.getElementById('nomeUsuario').textContent = usuario.nome;
+
+    document.getElementById('sair').addEventListener('click', (evento) => {
+      evento.preventDefault();
+      localStorage.removeItem('usuario');
+      window.location.href = 'login.html';
+    });
+
+    carregar();
+  </script>
+
+</body>
+</html>

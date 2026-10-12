@@ -43,7 +43,7 @@
       if (resposta.ok) {
         const usuario = await resposta.json();
         localStorage.setItem('usuario', JSON.stringify(usuario));
-        window.location.href = 'index.html';
+        window.location.href = (usuario.tipo === 'ATENDENTE' || usuario.tipo === 'ADMIN') ? 'painel.html' : 'index.html';
       } else {
         erroTexto.textContent = 'E-mail ou senha inválidos';
       }
